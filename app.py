@@ -109,8 +109,10 @@ def render_allocation_chart(portfolio_data):
     if portfolio_data is None or portfolio_data.empty:
         return
 
-    # 创建子图
-    fig = make_subplots(
+    st.subheader("当前资产配置（最新一天）")
+
+    # 创建子图 - 饼图
+    fig_pie = make_subplots(
         rows=1, cols=2,
         subplot_titles=('资产金额分布', '资产占比分布'),
         specs=[[{'type': 'pie'}, {'type': 'pie'}]]
@@ -119,7 +121,7 @@ def render_allocation_chart(portfolio_data):
     latest = portfolio_data.iloc[-1]
 
     # 资产金额饼图
-    fig.add_trace(
+    fig_pie.add_trace(
         go.Pie(
             labels=['股票', '黄金', '现金', '国债'],
             values=[latest['股票'], latest['黄金'], latest['现金'], latest['国债']],
@@ -131,7 +133,7 @@ def render_allocation_chart(portfolio_data):
     )
 
     # 资产占比饼图
-    fig.add_trace(
+    fig_pie.add_trace(
         go.Pie(
             labels=['股票', '黄金', '现金', '国债'],
             values=[latest['股票占比'], latest['黄金占比'], latest['现金占比'], latest['国债占比']],
@@ -142,14 +144,82 @@ def render_allocation_chart(portfolio_data):
         row=1, col=2
     )
 
-    fig.update_layout(
-        title_text="当前资产配置",
+    fig_pie.update_layout(
         template='plotly_white',
-        height=500,
+        height=400,
         showlegend=False
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+    st.markdown("---")
+
+    st.subheader("资产配置趋势")
+
+    # 占比堆叠面积图
+    fig_percentage = go.Figure()
+
+    # 添加四个资产类型的占比线（堆叠面积图）
+    for asset_type in ['国债', '现金', '黄金', '股票']:  # 按照从下到上的顺序
+        fig_percentage.add_trace(go.Scatter(
+            x=portfolio_data['日期'],
+            y=portfolio_data[f'{asset_type}占比'],
+            mode='lines',
+            name=asset_type,
+            stackgroup='one',  # 启用堆叠
+            fill='tonexty',     # 填充到下一个轨迹
+            line=dict(width=1),
+            hovertemplate='%{x}<br>%{fullData.name}: %{y:.2f}%<extra></extra>'
+        ))
+
+    fig_percentage.update_layout(
+        title="资产占比趋势（堆叠面积图）",
+        xaxis_title="日期",
+        yaxis_title="占比 (%)",
+        hovermode='x unified',
+        template='plotly_white',
+        height=400,
+        yaxis=dict(range=[0, 100])
+    )
+
+    st.plotly_chart(fig_percentage, use_container_width=True)
+
+    # 金额堆叠面积图
+    fig_amount = go.Figure()
+
+    # 添加四个资产类型的金额线（堆叠面积图）
+    for asset_type in ['国债', '现金', '黄金', '股票']:  # 按照从下到上的顺序
+        fig_amount.add_trace(go.Scatter(
+            x=portfolio_data['日期'],
+            y=portfolio_data[asset_type],
+            mode='lines',
+            name=asset_type,
+            stackgroup='one',  # 启用堆叠
+            fill='tonexty',     # 填充到下一个轨迹
+            line=dict(width=1),
+            hovertemplate='%{x}<br>%{fullData.name}: ¥%{y:,.2f}<extra></extra>'
+        ))
+
+    # 添加总资产线（虚线）
+    fig_amount.add_trace(go.Scatter(
+        x=portfolio_data['日期'],
+        y=portfolio_data['总资产'],
+        mode='lines',
+        name='总资产',
+        line=dict(color='black', width=2, dash='dash'),
+        hovertemplate='%{x}<br>总资产: ¥%{y:,.2f}<extra></extra>'
+    ))
+
+    fig_amount.update_layout(
+        title="资产金额趋势（堆叠面积图）",
+        xaxis_title="日期",
+        yaxis_title="金额（元）",
+        hovermode='x unified',
+        template='plotly_white',
+        height=400
+    )
+
+    st.plotly_chart(fig_amount, use_container_width=True)
 
 
 def render_asset_performance(historical_data):
