@@ -281,9 +281,13 @@ def main():
     col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
-        first_value = portfolio_data['总资产'].iloc[0]
-        total_return = ((latest['总资产'] - first_value) / first_value * 100)
-        st.metric("总资产", f"¥{latest['总资产']:,.2f}", f"{total_return:+.2f}%")
+        # 显示最后一天相比前一天的变化
+        if len(portfolio_data) >= 2:
+            previous_value = portfolio_data['总资产'].iloc[-2]
+            daily_change = ((latest['总资产'] - previous_value) / previous_value * 100)
+            st.metric("总资产", f"¥{latest['总资产']:,.2f}", f"{daily_change:+.2f}%")
+        else:
+            st.metric("总资产", f"¥{latest['总资产']:,.2f}")
 
     with col2:
         st.metric("股票占比", f"{latest['股票占比']:.2f}%", f"¥{latest['股票']:,.2f}")
