@@ -290,16 +290,36 @@ def main():
             st.metric("总资产", f"¥{latest['总资产']:,.2f}")
 
     with col2:
-        st.metric("股票占比", f"{latest['股票占比']:.2f}%", f"¥{latest['股票']:,.2f}")
+        if len(portfolio_data) >= 2:
+            previous_stock = portfolio_data['股票'].iloc[-2]
+            stock_change = ((latest['股票'] - previous_stock) / previous_stock * 100) if previous_stock > 0 else 0
+            st.metric("股票占比", f"{latest['股票占比']:.2f}%", f"{stock_change:+.2f}%")
+        else:
+            st.metric("股票占比", f"{latest['股票占比']:.2f}%", f"¥{latest['股票']:,.2f}")
 
     with col3:
-        st.metric("黄金占比", f"{latest['黄金占比']:.2f}%", f"¥{latest['黄金']:,.2f}")
+        if len(portfolio_data) >= 2:
+            previous_gold = portfolio_data['黄金'].iloc[-2]
+            gold_change = ((latest['黄金'] - previous_gold) / previous_gold * 100) if previous_gold > 0 else 0
+            st.metric("黄金占比", f"{latest['黄金占比']:.2f}%", f"{gold_change:+.2f}%")
+        else:
+            st.metric("黄金占比", f"{latest['黄金占比']:.2f}%", f"¥{latest['黄金']:,.2f}")
 
     with col4:
-        st.metric("现金占比", f"{latest['现金占比']:.2f}%", f"¥{latest['现金']:,.2f}")
+        if len(portfolio_data) >= 2:
+            previous_cash = portfolio_data['现金'].iloc[-2]
+            cash_change = ((latest['现金'] - previous_cash) / previous_cash * 100) if previous_cash > 0 else 0
+            st.metric("现金占比", f"{latest['现金占比']:.2f}%", f"{cash_change:+.2f}%")
+        else:
+            st.metric("现金占比", f"{latest['现金占比']:.2f}%", f"¥{latest['现金']:,.2f}")
 
     with col5:
-        st.metric("国债占比", f"{latest['国债占比']:.2f}%", f"¥{latest['国债']:,.2f}")
+        if len(portfolio_data) >= 2:
+            previous_bond = portfolio_data['国债'].iloc[-2]
+            bond_change = ((latest['国债'] - previous_bond) / previous_bond * 100) if previous_bond > 0 else 0
+            st.metric("国债占比", f"{latest['国债占比']:.2f}%", f"{bond_change:+.2f}%")
+        else:
+            st.metric("国债占比", f"{latest['国债占比']:.2f}%", f"¥{latest['国债']:,.2f}")
 
     st.markdown("---")
 
