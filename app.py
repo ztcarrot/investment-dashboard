@@ -355,6 +355,10 @@ def main():
         else:
             st.session_state.assets = []
 
+    # 初始化数字显示状态（默认隐藏）
+    if 'show_numbers' not in st.session_state:
+        st.session_state.show_numbers = False
+
     # 检查是否有配置
     assets = st.session_state.get('assets', [])
 
@@ -364,7 +368,7 @@ def main():
         return
 
     # 数据抓取按钮
-    col1, col2, col3 = st.columns([2, 1, 1])
+    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
 
     with col1:
         st.info(f"📌 当前已配置 {len(assets)} 个资产")
@@ -382,6 +386,13 @@ def main():
             index=0
         )
 
+    with col4:
+        # 眼睛按钮：切换显示/隐藏数字
+        eye_icon = "👁️" if st.session_state.show_numbers else "🙈"
+        if st.button(f"{eye_icon} {'隐藏' if st.session_state.show_numbers else '显示'}数字", key="toggle_numbers"):
+            st.session_state.show_numbers = not st.session_state.show_numbers
+            st.rerun()
+
     st.markdown("---")
 
     # 加载数据
@@ -391,53 +402,57 @@ def main():
         st.error("❌ 数据加载失败，请检查网络连接或配置")
         return
 
-    # 统计卡片
-    latest = portfolio_data.iloc[-1]
+    # 统计卡片（根据状态显示或隐藏）
+    if st.session_state.show_numbers:
+        latest = portfolio_data.iloc[-1]
 
-    col1, col2, col3, col4, col5 = st.columns(5)
+        col1, col2, col3, col4, col5 = st.columns(5)
 
-    with col1:
-        # 显示最后一天相比前一天的变化
-        if len(portfolio_data) >= 2:
-            previous_value = portfolio_data['总资产'].iloc[-2]
-            daily_change = ((latest['总资产'] - previous_value) / previous_value * 100)
-            st.metric("总资产", f"¥{latest['总资产']:,.2f}", f"{daily_change:+.2f}%")
-        else:
-            st.metric("总资产", f"¥{latest['总资产']:,.2f}")
+        with col1:
+            # 显示最后一天相比前一天的变化
+            if len(portfolio_data) >= 2:
+                previous_value = portfolio_data['总资产'].iloc[-2]
+                daily_change = ((latest['总资产'] - previous_value) / previous_value * 100)
+                st.metric("总资产", f"¥{latest['总资产']:,.2f}", f"{daily_change:+.2f}%")
+            else:
+                st.metric("总资产", f"¥{latest['总资产']:,.2f}")
 
-    with col2:
-        if len(portfolio_data) >= 2:
-            previous_stock = portfolio_data['股票'].iloc[-2]
-            stock_change = ((latest['股票'] - previous_stock) / previous_stock * 100) if previous_stock > 0 else 0
-            st.metric("股票占比", f"{latest['股票占比']:.2f}%", f"{stock_change:+.2f}%")
-        else:
-            st.metric("股票占比", f"{latest['股票占比']:.2f}%", f"¥{latest['股票']:,.2f}")
+        with col2:
+            if len(portfolio_data) >= 2:
+                previous_stock = portfolio_data['股票'].iloc[-2]
+                stock_change = ((latest['股票'] - previous_stock) / previous_stock * 100) if previous_stock > 0 else 0
+                st.metric("股票占比", f"{latest['股票占比']:.2f}%", f"{stock_change:+.2f}%")
+            else:
+                st.metric("股票占比", f"{latest['股票占比']:.2f}%", f"¥{latest['股票']:,.2f}")
 
-    with col3:
-        if len(portfolio_data) >= 2:
-            previous_gold = portfolio_data['黄金'].iloc[-2]
-            gold_change = ((latest['黄金'] - previous_gold) / previous_gold * 100) if previous_gold > 0 else 0
-            st.metric("黄金占比", f"{latest['黄金占比']:.2f}%", f"{gold_change:+.2f}%")
-        else:
-            st.metric("黄金占比", f"{latest['黄金占比']:.2f}%", f"¥{latest['黄金']:,.2f}")
+        with col3:
+            if len(portfolio_data) >= 2:
+                previous_gold = portfolio_data['黄金'].iloc[-2]
+                gold_change = ((latest['黄金'] - previous_gold) / previous_gold * 100) if previous_gold > 0 else 0
+                st.metric("黄金占比", f"{latest['黄金占比']:.2f}%", f"{gold_change:+.2f}%")
+            else:
+                st.metric("黄金占比", f"{latest['黄金占比']:.2f}%", f"¥{latest['黄金']:,.2f}")
 
-    with col4:
-        if len(portfolio_data) >= 2:
-            previous_cash = portfolio_data['现金'].iloc[-2]
-            cash_change = ((latest['现金'] - previous_cash) / previous_cash * 100) if previous_cash > 0 else 0
-            st.metric("现金占比", f"{latest['现金占比']:.2f}%", f"{cash_change:+.2f}%")
-        else:
-            st.metric("现金占比", f"{latest['现金占比']:.2f}%", f"¥{latest['现金']:,.2f}")
+        with col4:
+            if len(portfolio_data) >= 2:
+                previous_cash = portfolio_data['现金'].iloc[-2]
+                cash_change = ((latest['现金'] - previous_cash) / previous_cash * 100) if previous_cash > 0 else 0
+                st.metric("现金占比", f"{latest['现金占比']:.2f}%", f"{cash_change:+.2f}%")
+            else:
+                st.metric("现金占比", f"{latest['现金占比']:.2f}%", f"¥{latest['现金']:,.2f}")
 
-    with col5:
-        if len(portfolio_data) >= 2:
-            previous_bond = portfolio_data['国债'].iloc[-2]
-            bond_change = ((latest['国债'] - previous_bond) / previous_bond * 100) if previous_bond > 0 else 0
-            st.metric("国债占比", f"{latest['国债占比']:.2f}%", f"{bond_change:+.2f}%")
-        else:
-            st.metric("国债占比", f"{latest['国债占比']:.2f}%", f"¥{latest['国债']:,.2f}")
+        with col5:
+            if len(portfolio_data) >= 2:
+                previous_bond = portfolio_data['国债'].iloc[-2]
+                bond_change = ((latest['国债'] - previous_bond) / previous_bond * 100) if previous_bond > 0 else 0
+                st.metric("国债占比", f"{latest['国债占比']:.2f}%", f"{bond_change:+.2f}%")
+            else:
+                st.metric("国债占比", f"{latest['国债占比']:.2f}%", f"¥{latest['国债']:,.2f}")
 
-    st.markdown("---")
+        st.markdown("---")
+    else:
+        # 隐藏数字时显示提示
+        st.info("💡 点击右上角的 🙈 按钮显示资产数据")
 
     # 图表
     tab1, tab2, tab3, tab4 = st.tabs(["📈 总资产走势", "🥧 资产配置", "📊 标的表现", "📋 数据表格"])
