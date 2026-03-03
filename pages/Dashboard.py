@@ -14,8 +14,11 @@ from datetime import datetime, timedelta
 try:
     from utils.data_fetcher import DataFetcher
 except ImportError:
-    # Streamlit Cloud 兼容的导入方式
-    from investment_dashboard.utils.data_fetcher import DataFetcher
+    import sys
+    from pathlib import Path
+    # 添加项目根目录到 Python 路径
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from utils.data_fetcher import DataFetcher
 
 
 @st.cache_data(ttl=3600)
