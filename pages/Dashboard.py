@@ -149,43 +149,89 @@ def render_asset_performance(historical_data):
     if historical_data is None or historical_data.empty:
         return
 
-    # 获取最新数据
-    latest_data = historical_data[historical_data['日期'] == historical_data['日期'].max()]
-
-    if latest_data.empty:
-        return
-
     # 按资产类型分组
-    asset_types = latest_data['资产类型'].unique()
+    asset_types = historical_data['资产类型'].unique()
 
     for asset_type in asset_types:
-        st.markdown(f"### {asset_type}类标的")
+        st.markdown(f"### {asset_type}类标的走势")
 
-        asset_data = latest_data[latest_data['资产类型'] == asset_type]
+        # 获取该资产类型的所有数据
+        asset_data = historical_data[historical_data['资产类型'] == asset_type]
 
-        # 创建柱状图
-        fig = go.Figure(data=[
-            go.Bar(
-                x=asset_data['名称'],
-                y=asset_data['当前市值'],
-                text=asset_data['当前市值'].apply(lambda x: f'¥{x:,.0f}'),
-                textposition='outside',
-                marker_color=['#1f77b4' if a == '股票' else
-                             '#ff7f0e' if a == '黄金' else
-                             '#9467bd' if a == '现金' else '#2ca02c'
-                             for a in asset_data['资产类型']]
-            )
-        ])
+        # 按标的分组绘制折线图
+        fig = go.Figure()
+
+        for asset_name in asset_data['名称'].unique():
+            asset_subset = asset_data[asset_data['名称'] == asset_name]
+
+            fig.add_trace(go.Scatter(
+                x=asset_subset['日期'],
+                y=asset_subset['当前市值'],
+                mode='lines+markers',
+                name=asset_name,
+                line=dict(width=2),
+                marker=dict(size=4),
+                hovertemplate='%{x}<br>%{fullData.name}: ¥%{y:,.2f}<extra></extra>'
+            ))
 
         fig.update_layout(
-            title=f"{asset_type}类标的市值",
-            xaxis_title="标的",
+            title=f"{asset_type}类标的市值走势",
+            xaxis_title="日期",
             yaxis_title="市值（元）",
+            hovermode='x unified',
             template='plotly_white',
-            height=400
+            height=400,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            )
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+
+def render_data_table(historical_data, portfolio_data):
+    """渲染完整数据表格"""
+    if historical_data is None or historical_data.empty:
+        return
+
+    st.subheader("📊 历史数据")
+
+    # 按日期透视表格
+    pivot_data = historical_data.pivot_table(
+        index='日期',
+        columns='名称',
+        values='当前市值',
+        aggfunc='sum'
+    )
+
+    st.dataframe(
+        pivot_data.style.format('¥{:,.2f}'),
+        use_container_width=True,
+        height=400
+    )
+
+    st.markdown("---")
+
+    st.subheader("📈 资产组合汇总")
+
+    # 显示汇总数据
+    display_df = portfolio_data.copy()
+    display_df['日期'] = pd.to_datetime(display_df['日期']).dt.strftime('%Y-%m-%d')
+    display_df['总资产'] = display_df['总资产'].apply(lambda x: f'¥{x:,.2f}')
+    display_df['股票'] = display_df['股票'].apply(lambda x: f'¥{x:,.2f}')
+    display_df['黄金'] = display_df['黄金'].apply(lambda x: f'¥{x:,.2f}')
+    display_df['现金'] = display_df['现金'].apply(lambda x: f'¥{x:,.2f}')
+    display_df['国债'] = display_df['国债'].apply(lambda x: f'¥{x:,.2f}')
+
+    st.dataframe(
+        display_df,
+        use_container_width=True,
+        hide_index=True
+    )
 
 
 def main():
@@ -251,7 +297,7 @@ def main():
     st.markdown("---")
 
     # 图表
-    tab1, tab2, tab3 = st.tabs(["📈 总资产走势", "🥧 资产配置", "📊 标的表现"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📈 总资产走势", "🥧 资产配置", "📊 标的表现", "📋 数据表格"])
 
     with tab1:
         render_total_assets_chart(portfolio_data)
@@ -262,28 +308,8 @@ def main():
     with tab3:
         render_asset_performance(historical_data)
 
-    # 最新持仓表格
-    st.markdown("---")
-    st.subheader("📋 最新持仓详情")
-
-    latest_holdings = historical_data[historical_data['日期'] == historical_data['日期'].max()]
-
-    if not latest_holdings.empty:
-        # 添加颜色标记
-        def color_return(val):
-            color = 'green' if val >= 0 else 'red'
-            return f'color: {color}'
-
-        display_df = latest_holdings[['代码', '名称', '资产类型', '最新价格', '持有份额', '当前市值', '收益率']].copy()
-        display_df['最新价格'] = display_df['最新价格'].apply(lambda x: f'¥{x:.2f}')
-        display_df['当前市值'] = display_df['当前市值'].apply(lambda x: f'¥{x:,.2f}')
-        display_df['收益率'] = display_df['收益率'].apply(lambda x: f'{x:+.2f}%')
-
-        st.dataframe(
-            display_df,
-            use_container_width=True,
-            hide_index=True
-        )
+    with tab4:
+        render_data_table(historical_data, portfolio_data)
 
 
 if __name__ == "__main__":
