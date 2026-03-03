@@ -184,6 +184,18 @@ def render_allocation_chart(portfolio_data):
 
     st.plotly_chart(fig_percentage, use_container_width=True)
 
+    # 显示第一个和最后一个占比数值
+    st.caption("📊 占比变化：")
+    first_row = portfolio_data.iloc[0]
+    last_row = portfolio_data.iloc[-1]
+
+    for asset_type in ['股票', '黄金', '现金', '国债']:
+        first_val = first_row[f'{asset_type}占比']
+        last_val = last_row[f'{asset_type}占比']
+        change = last_val - first_val
+        change_str = f"({change:+.2f}%)" if change != 0 else ""
+        st.caption(f"  **{asset_type}**: {first_val:.2f}% → {last_val:.2f}% {change_str}")
+
     # 金额堆叠面积图
     fig_amount = go.Figure()
 
