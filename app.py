@@ -23,21 +23,28 @@ st.set_page_config(
 
 
 @st.cache_data(ttl=3600)
-def load_data():
+def load_data(date_range="最近90天"):
     """加载或抓取数据"""
     assets = st.session_state.get('assets', [])
 
     if not assets:
         return None, None
 
-    # 计算日期范围（最近60天）
+    # 根据选择计算日期范围
+    days_map = {
+        "最近90天": 90,
+        "最近180天": 180,
+        "最近365天": 365
+    }
+    days = days_map.get(date_range, 90)
+
     end_date = datetime.now().strftime('%Y-%m-%d')
-    start_date = (datetime.now() - timedelta(days=60)).strftime('%Y-%m-%d')
+    start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
 
     # 抓取数据
     fetcher = DataFetcher()
 
-    with st.spinner("🔄 正在抓取数据..."):
+    with st.spinner(f"🔄 正在抓取最近{days}天数据..."):
         historical_data = fetcher.fetch_all_assets_data(assets, start_date, end_date)
 
     if historical_data.empty:
@@ -301,14 +308,14 @@ def main():
         # 日期范围选择
         date_range = st.selectbox(
             "数据范围",
-            options=["最近30天", "最近60天", "最近90天"],
-            index=1
+            options=["最近90天", "最近180天", "最近365天"],
+            index=0
         )
 
     st.markdown("---")
 
     # 加载数据
-    historical_data, portfolio_data = load_data()
+    historical_data, portfolio_data = load_data(date_range)
 
     if historical_data is None or portfolio_data is None:
         st.error("❌ 数据加载失败，请检查网络连接或配置")
