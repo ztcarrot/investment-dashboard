@@ -146,7 +146,7 @@ def render_allocation_chart(portfolio_data):
 
 
 def render_asset_performance(historical_data):
-    """渲染各标的收益表现"""
+    """渲染各标的收益表现（归一化）"""
     if historical_data is None or historical_data.empty:
         return
 
@@ -154,7 +154,7 @@ def render_asset_performance(historical_data):
     asset_types = historical_data['资产类型'].unique()
 
     for asset_type in asset_types:
-        st.markdown(f"### {asset_type}类标的走势")
+        st.markdown(f"### {asset_type}类标的走势（归一化）")
 
         # 获取该资产类型的所有数据
         asset_data = historical_data[historical_data['资产类型'] == asset_type]
@@ -163,22 +163,33 @@ def render_asset_performance(historical_data):
         fig = go.Figure()
 
         for asset_name in asset_data['名称'].unique():
-            asset_subset = asset_data[asset_data['名称'] == asset_name]
+            asset_subset = asset_data[asset_data['名称'] == asset_name].copy()
+
+            # 归一化：第一天设为100
+            first_value = asset_subset['当前市值'].iloc[0]
+            if first_value > 0:
+                asset_subset['归一化值'] = (asset_subset['当前市值'] / first_value) * 100
+            else:
+                asset_subset['归一化值'] = 100
+
+            # 保存原始值用于 hover 显示
+            asset_subset['原始市值'] = asset_subset['当前市值']
 
             fig.add_trace(go.Scatter(
                 x=asset_subset['日期'],
-                y=asset_subset['当前市值'],
+                y=asset_subset['归一化值'],
                 mode='lines+markers',
                 name=asset_name,
                 line=dict(width=2),
                 marker=dict(size=4),
-                hovertemplate='%{x}<br>%{fullData.name}: ¥%{y:,.2f}<extra></extra>'
+                hovertemplate='%{x}<br>%{fullData.name}<br>归一化: %{y:.2f}<br>实际: ¥%{customdata[0]:,.2f}<extra></extra>',
+                customdata=asset_subset[['原始市值']].values
             ))
 
         fig.update_layout(
-            title=f"{asset_type}类标的市值走势",
+            title=f"{asset_type}类标的走势（归一化，起点=100）",
             xaxis_title="日期",
-            yaxis_title="市值（元）",
+            yaxis_title="相对值（起点=100）",
             hovermode='x unified',
             template='plotly_white',
             height=400,
@@ -192,6 +203,8 @@ def render_asset_performance(historical_data):
         )
 
         st.plotly_chart(fig, use_container_width=True)
+
+        st.caption("💡 归一化说明：所有标的起点设为100，便于比较相对走势")
 
 
 def render_data_table(historical_data, portfolio_data):
