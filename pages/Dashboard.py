@@ -278,7 +278,7 @@ def main():
     # 统计卡片
     latest = portfolio_data.iloc[-1]
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
         first_value = portfolio_data['总资产'].iloc[0]
@@ -293,6 +293,9 @@ def main():
 
     with col4:
         st.metric("现金占比", f"{latest['现金占比']:.2f}%", f"¥{latest['现金']:,.2f}")
+
+    with col5:
+        st.metric("国债占比", f"{latest['国债占比']:.2f}%", f"¥{latest['国债']:,.2f}")
 
     st.markdown("---")
 
